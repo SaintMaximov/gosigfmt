@@ -81,3 +81,12 @@ func TestParseYAML_BadType(t *testing.T) {
 		t.Error("want error on malformed YAML")
 	}
 }
+
+func TestParseYAML_ValidationFailure(t *testing.T) {
+	// Valid YAML, parses cleanly, but fails validation (LineLength=0).
+	yaml := []byte("line_length: 0\n")
+	_, err := ParseYAML(yaml)
+	if err == nil || !strings.Contains(err.Error(), "line_length") {
+		t.Errorf("want validation error mentioning line_length, got %v", err)
+	}
+}
