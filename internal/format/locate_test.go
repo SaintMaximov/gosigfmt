@@ -66,3 +66,37 @@ func (t *T) Do(a int) error { return nil }
 		t.Error("method signature must have receiver")
 	}
 }
+
+func TestSignatures_InterfaceMethod(t *testing.T) {
+	src := `package p
+
+type Doer interface {
+	Do(ctx context.Context, n int) error
+}
+`
+	fset, file := parseSrc(t, src)
+	cfg := config.Defaults()
+	sigs := signatures(fset, file, cfg)
+	if len(sigs) != 1 {
+		t.Fatalf("want 1 signature (interface method), got %d", len(sigs))
+	}
+	if sigs[0].kind != sigInterfaceMethod {
+		t.Errorf("want sigInterfaceMethod, got %v", sigs[0].kind)
+	}
+}
+
+func TestSignatures_InterfaceMethodDisabled(t *testing.T) {
+	src := `package p
+
+type Doer interface {
+	Do(ctx context.Context, n int) error
+}
+`
+	fset, file := parseSrc(t, src)
+	cfg := config.Defaults()
+	cfg.Targets.Interfaces = false
+	sigs := signatures(fset, file, cfg)
+	if len(sigs) != 0 {
+		t.Errorf("want 0 signatures when Interfaces disabled, got %d", len(sigs))
+	}
+}

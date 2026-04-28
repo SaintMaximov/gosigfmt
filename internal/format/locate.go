@@ -61,6 +61,36 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 				s.bodyStart = x.End()
 			}
 			out = append(out, s)
+		case *ast.InterfaceType:
+			if !cfg.Targets.Interfaces {
+				return true
+			}
+			if x.Methods == nil {
+				return true
+			}
+			for _, field := range x.Methods.List {
+				ft, ok := field.Type.(*ast.FuncType)
+				if !ok {
+					continue
+				}
+				if len(field.Names) == 0 {
+					continue // embedded interface, not a method
+				}
+				s := signature{
+					kind:        sigInterfaceMethod,
+					params:      ft.Params,
+					results:     ft.Results,
+					funcKeyword: field.Names[0].Pos(),
+					bodyStart:   field.End(),
+					nameSpan:    span{start: fset.Position(field.Names[0].Pos()).Offset, end: fset.Position(field.Names[0].End()).Offset},
+					commentMap:  cmap,
+					fset:        fset,
+				}
+				if ft.TypeParams != nil {
+					s.typeParams = ft.TypeParams
+				}
+				out = append(out, s)
+			}
 		}
 		return true
 	})
