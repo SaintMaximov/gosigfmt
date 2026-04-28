@@ -100,3 +100,30 @@ type Doer interface {
 		t.Errorf("want 0 signatures when Interfaces disabled, got %d", len(sigs))
 	}
 }
+
+func TestSignatures_InterfaceEmbedded(t *testing.T) {
+	src := `package p
+
+type Reader interface {
+	Read(p []byte) (int, error)
+}
+
+type ReadWriter interface {
+	Reader
+	Write(p []byte) (int, error)
+}
+`
+	fset, file := parseSrc(t, src)
+	cfg := config.Defaults()
+	sigs := signatures(fset, file, cfg)
+	// Reader has 1 method (Read), ReadWriter has Reader (embedded — skipped) + Write (1 method).
+	// Total expected: 2 signatures (Read and Write); the embedded Reader is NOT a signature.
+	if len(sigs) != 2 {
+		t.Fatalf("want 2 signatures (Read + Write), got %d", len(sigs))
+	}
+	for _, s := range sigs {
+		if s.kind != sigInterfaceMethod {
+			t.Errorf("expected sigInterfaceMethod, got %v", s.kind)
+		}
+	}
+}
