@@ -91,6 +91,23 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 				}
 				out = append(out, s)
 			}
+		case *ast.FuncLit:
+			if !cfg.Targets.FuncLiterals {
+				return true
+			}
+			s := signature{
+				kind:        sigFuncLit,
+				params:      x.Type.Params,
+				results:     x.Type.Results,
+				funcKeyword: x.Pos(),
+				bodyStart:   x.Body.Lbrace,
+				commentMap:  cmap,
+				fset:        fset,
+			}
+			if x.Type.TypeParams != nil {
+				s.typeParams = x.Type.TypeParams
+			}
+			out = append(out, s)
 		}
 		return true
 	})

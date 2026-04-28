@@ -127,3 +127,33 @@ type ReadWriter interface {
 		}
 	}
 }
+
+func TestSignatures_FuncLit_DisabledByDefault(t *testing.T) {
+	src := `package p
+
+var f = func(a int, b int) int { return a + b }
+`
+	fset, file := parseSrc(t, src)
+	cfg := config.Defaults() // FuncLiterals=false
+	sigs := signatures(fset, file, cfg)
+	if len(sigs) != 0 {
+		t.Errorf("want 0 sigs when FuncLiterals=false, got %d", len(sigs))
+	}
+}
+
+func TestSignatures_FuncLit_Enabled(t *testing.T) {
+	src := `package p
+
+var f = func(a int, b int) int { return a + b }
+`
+	fset, file := parseSrc(t, src)
+	cfg := config.Defaults()
+	cfg.Targets.FuncLiterals = true
+	sigs := signatures(fset, file, cfg)
+	if len(sigs) != 1 {
+		t.Fatalf("want 1 sig when FuncLiterals=true, got %d", len(sigs))
+	}
+	if sigs[0].kind != sigFuncLit {
+		t.Errorf("want sigFuncLit, got %v", sigs[0].kind)
+	}
+}
