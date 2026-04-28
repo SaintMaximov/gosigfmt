@@ -22,3 +22,6 @@ coverage.html
 
 # fuzz corpus seeds (kept under testdata/fuzz, but generated artifacts excluded)
 /testdata/fuzz/*/[!seed]*
+
+# internal planning docs — kept on disk, never committed
+/docs/superpowers/
