@@ -24,6 +24,7 @@ type signature struct {
 	funcKeyword token.Pos      // start of "func" or interface method name
 	bodyStart   token.Pos      // "{" or end of method-in-interface line
 	nameSpan    span
+	name        string         // populated for FuncDecl and InterfaceMethod, "" for FuncLit
 	commentMap  ast.CommentMap // populated by signatures() for the file
 	fset        *token.FileSet
 }
@@ -49,6 +50,7 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 				results:     x.Type.Results,
 				funcKeyword: x.Pos(),
 				nameSpan:    span{start: fset.Position(x.Name.Pos()).Offset, end: fset.Position(x.Name.End()).Offset},
+				name:        x.Name.Name,
 				commentMap:  cmap,
 				fset:        fset,
 			}
@@ -83,6 +85,7 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 					funcKeyword: field.Names[0].Pos(),
 					bodyStart:   field.End(),
 					nameSpan:    span{start: fset.Position(field.Names[0].Pos()).Offset, end: fset.Position(field.Names[0].End()).Offset},
+					name:        field.Names[0].Name,
 					commentMap:  cmap,
 					fset:        fset,
 				}
