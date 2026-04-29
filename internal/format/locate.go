@@ -44,6 +44,9 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 			if !cfg.Targets.Functions {
 				return true
 			}
+			if x.Body == nil {
+				return true // skip body-less FuncDecls (assembly stubs etc.)
+			}
 			s := signature{
 				kind:        sigFuncDecl,
 				receiver:    x.Recv,
@@ -58,19 +61,10 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 			if x.Type.TypeParams != nil {
 				s.typeParams = x.Type.TypeParams
 			}
-			if x.Body != nil {
-				s.bodyStart = x.Body.Lbrace
-			} else {
-				s.bodyStart = x.End()
-			}
+			s.bodyStart = x.Body.Lbrace
 			s.fullSpan = span{
 				start: fset.Position(x.Pos()).Offset,
-				end: func() int {
-					if x.Body != nil {
-						return fset.Position(x.Body.Lbrace).Offset + 1 // include "{"
-					}
-					return fset.Position(x.End()).Offset
-				}(),
+				end:   fset.Position(x.Body.Lbrace).Offset + 1,
 			}
 			out = append(out, s)
 		case *ast.InterfaceType:

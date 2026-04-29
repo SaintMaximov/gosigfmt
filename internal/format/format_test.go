@@ -116,6 +116,18 @@ func f(
 	}
 }
 
+func TestFormat_NoBodyFuncDeclSkipped(t *testing.T) {
+	src := []byte("package p\n\nfunc external(a int)\n")
+	cfg := config.Defaults()
+	out, err := Format(src, cfg)
+	if err != nil {
+		t.Fatalf("Format: %v", err)
+	}
+	if !bytes.Equal(out, src) {
+		t.Errorf("body-less FuncDecl must be left untouched.\nwant: %q\n got: %q", src, out)
+	}
+}
+
 func TestGolden(t *testing.T) {
 	cases, err := filepath.Glob("../../testdata/golden/*")
 	if err != nil {
