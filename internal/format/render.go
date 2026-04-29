@@ -6,6 +6,7 @@ import (
 	"go/ast"
 	"go/printer"
 	"go/token"
+	"strings"
 
 	"github.com/SaintMaximov/gosigfmt/internal/config"
 )
@@ -220,46 +221,58 @@ func renderMultiLine(s signature, cfg config.Config, baseIndent string, splitRes
 	return buf.String(), nil
 }
 
-// writeFieldsMultiLine writes each field of fl on its own line,
-// preceded by `indent` and followed by ",\n".
-// signature `s` is currently unused but kept for future comment-aware rendering (Task 15).
+// writeFieldsMultiLine writes each field of fl on its own line, preceded by
+// `indent` and followed by ",\n". Comments associated with each field are
+// preserved: leading comments (positioned before the field) appear on their
+// own line above; trailing comments appear at end of the field's line.
 func writeFieldsMultiLine(buf *bytes.Buffer, s signature, fl *ast.FieldList, indent string, expandGrouped bool) error {
-	_ = s
 	if fl == nil {
 		return nil
 	}
 	for _, f := range fl.List {
+		leading, trailing := commentsForField(s, f)
+		for _, c := range leading {
+			buf.WriteString(indent)
+			buf.WriteString(c)
+			buf.WriteString("\n")
+		}
+
 		var typeBuf bytes.Buffer
 		if err := printNode(&typeBuf, fset(s), f.Type); err != nil {
 			return fmt.Errorf("render field type: %w", err)
 		}
 		typeStr := typeBuf.String()
 
-		if len(f.Names) == 0 {
+		writeOne := func(nameStr string) {
 			buf.WriteString(indent)
+			if nameStr != "" {
+				buf.WriteString(nameStr)
+				buf.WriteString(" ")
+			}
 			buf.WriteString(typeStr)
-			buf.WriteString(",\n")
+			buf.WriteString(",")
+			if len(trailing) > 0 {
+				buf.WriteString(" ")
+				buf.WriteString(strings.Join(trailing, " "))
+				trailing = nil // attach to first emitted line
+			}
+			buf.WriteString("\n")
+		}
+
+		if len(f.Names) == 0 {
+			writeOne("")
 			continue
 		}
 		if expandGrouped {
 			for _, name := range f.Names {
-				buf.WriteString(indent)
-				buf.WriteString(name.Name)
-				buf.WriteString(" ")
-				buf.WriteString(typeStr)
-				buf.WriteString(",\n")
+				writeOne(name.Name)
 			}
 		} else {
-			buf.WriteString(indent)
-			for j, name := range f.Names {
-				if j > 0 {
-					buf.WriteString(", ")
-				}
-				buf.WriteString(name.Name)
+			names := make([]string, len(f.Names))
+			for i, n := range f.Names {
+				names[i] = n.Name
 			}
-			buf.WriteString(" ")
-			buf.WriteString(typeStr)
-			buf.WriteString(",\n")
+			writeOne(strings.Join(names, ", "))
 		}
 	}
 	return nil

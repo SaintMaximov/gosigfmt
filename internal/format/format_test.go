@@ -74,3 +74,37 @@ func TestFormat_Idempotent(t *testing.T) {
 		t.Errorf("not idempotent.\nfirst:\n%s\nsecond:\n%s", string(once), string(twice))
 	}
 }
+
+func TestFormat_CommentLineAfterParam(t *testing.T) {
+	// Force expand by making a single param very long.
+	long := strings.Repeat("x", 70)
+	src := []byte("package p\n\nfunc f(a int, b int /* primary */, c int, " + long + " int) error {\n\treturn nil\n}\n")
+	cfg := config.Defaults()
+	out, err := Format(src, cfg)
+	if err != nil {
+		t.Fatalf("Format: %v", err)
+	}
+	if !strings.Contains(string(out), "// primary") {
+		t.Errorf("block comment must be converted to line comment in expanded form; got:\n%s", string(out))
+	}
+}
+
+func TestFormat_LineCommentForbidsCollapse(t *testing.T) {
+	src := []byte(`package p
+
+func f(
+	a int, // primary
+	b int,
+) int {
+	return 0
+}
+`)
+	cfg := config.Defaults()
+	out, err := Format(src, cfg)
+	if err != nil {
+		t.Fatalf("Format: %v", err)
+	}
+	if strings.Contains(string(out), "func f(a int") {
+		t.Errorf("must NOT collapse when line comments present; got:\n%s", string(out))
+	}
+}
