@@ -137,3 +137,152 @@ func printFieldListInner(buf *bytes.Buffer, fset *token.FileSet, fl *ast.FieldLi
 	}
 	return nil
 }
+
+// renderMultiLine returns the multi-line form: each parameter on its own line.
+// baseIndent is the indentation of the line containing "func".
+// splitResults indicates whether the results FieldList should also be split.
+//
+// The output for FuncDecl/FuncLit ends with " {".
+// For interface methods there is no trailing.
+func renderMultiLine(s signature, cfg config.Config, baseIndent string, splitResults bool) (string, error) {
+	paramIndent := baseIndent + "\t"
+	var buf bytes.Buffer
+
+	// Prefix
+	switch s.kind {
+	case sigFuncDecl, sigFuncLit:
+		buf.WriteString("func")
+		if s.receiver != nil {
+			buf.WriteString(" (")
+			if err := printFieldListInner(&buf, s.fset, s.receiver); err != nil {
+				return "", err
+			}
+			buf.WriteString(")")
+		}
+		if s.name != "" {
+			buf.WriteString(" ")
+			buf.WriteString(s.name)
+		}
+		if s.typeParams != nil {
+			buf.WriteString("[")
+			if err := printFieldListInner(&buf, s.fset, s.typeParams); err != nil {
+				return "", err
+			}
+			buf.WriteString("]")
+		}
+	case sigInterfaceMethod:
+		buf.WriteString(s.name)
+		if s.typeParams != nil {
+			buf.WriteString("[")
+			if err := printFieldListInner(&buf, s.fset, s.typeParams); err != nil {
+				return "", err
+			}
+			buf.WriteString("]")
+		}
+	}
+
+	// Params: each on its own line
+	buf.WriteString("(\n")
+	if err := writeFieldsMultiLine(&buf, s, s.params, paramIndent, cfg.ExpandGroupedParams); err != nil {
+		return "", err
+	}
+	buf.WriteString(baseIndent)
+	buf.WriteString(")")
+
+	// Results
+	if s.results != nil && len(s.results.List) > 0 {
+		buf.WriteString(" ")
+		if splitResults && hasMultipleResultFields(s.results) {
+			buf.WriteString("(\n")
+			if err := writeFieldsMultiLine(&buf, s, s.results, paramIndent, cfg.ExpandGroupedParams); err != nil {
+				return "", err
+			}
+			buf.WriteString(baseIndent)
+			buf.WriteString(")")
+		} else {
+			parens := needParens(s.results)
+			if parens {
+				buf.WriteString("(")
+			}
+			if err := printFieldListInner(&buf, s.fset, s.results); err != nil {
+				return "", err
+			}
+			if parens {
+				buf.WriteString(")")
+			}
+		}
+	}
+
+	if s.kind != sigInterfaceMethod {
+		buf.WriteString(" {")
+	}
+	return buf.String(), nil
+}
+
+// writeFieldsMultiLine writes each field of fl on its own line,
+// preceded by `indent` and followed by ",\n".
+// signature `s` is currently unused but kept for future comment-aware rendering (Task 15).
+func writeFieldsMultiLine(buf *bytes.Buffer, s signature, fl *ast.FieldList, indent string, expandGrouped bool) error {
+	_ = s
+	if fl == nil {
+		return nil
+	}
+	for _, f := range fl.List {
+		var typeBuf bytes.Buffer
+		if err := printNode(&typeBuf, fset(s), f.Type); err != nil {
+			return err
+		}
+		typeStr := typeBuf.String()
+
+		if len(f.Names) == 0 {
+			buf.WriteString(indent)
+			buf.WriteString(typeStr)
+			buf.WriteString(",\n")
+			continue
+		}
+		if expandGrouped {
+			for _, name := range f.Names {
+				buf.WriteString(indent)
+				buf.WriteString(name.Name)
+				buf.WriteString(" ")
+				buf.WriteString(typeStr)
+				buf.WriteString(",\n")
+			}
+		} else {
+			buf.WriteString(indent)
+			for j, name := range f.Names {
+				if j > 0 {
+					buf.WriteString(", ")
+				}
+				buf.WriteString(name.Name)
+			}
+			buf.WriteString(" ")
+			buf.WriteString(typeStr)
+			buf.WriteString(",\n")
+		}
+	}
+	return nil
+}
+
+// fset returns the file set associated with a signature (small adapter for clarity).
+func fset(s signature) *token.FileSet {
+	return s.fset
+}
+
+func hasMultipleResultFields(fl *ast.FieldList) bool {
+	if fl == nil {
+		return false
+	}
+	count := 0
+	for _, f := range fl.List {
+		if len(f.Names) == 0 {
+			count++
+		} else {
+			count += len(f.Names)
+		}
+		if count > 1 {
+			return true
+		}
+	}
+	return false
+}
