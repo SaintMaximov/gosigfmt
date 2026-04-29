@@ -40,7 +40,7 @@ func walk(args []string, cfg config.Config) ([]string, error) {
 			}
 			if d.IsDir() {
 				name := d.Name()
-				if name == "vendor" || (strings.HasPrefix(name, ".") && p != path) {
+				if name == "vendor" || name == "testdata" || (strings.HasPrefix(name, ".") && p != path) {
 					return fs.SkipDir
 				}
 				if !recursive && p != path {

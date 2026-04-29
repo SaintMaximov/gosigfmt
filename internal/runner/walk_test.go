@@ -59,6 +59,21 @@ func TestWalk_SkipTestFiles(t *testing.T) {
 	}
 }
 
+func TestWalk_SkipTestdata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "a.go"), "package p\n")
+	writeFile(t, filepath.Join(root, "testdata", "fixture.go"), "package p\n")
+
+	cfg := config.Defaults()
+	files, err := walk([]string{root + "/..."}, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 || filepath.Base(files[0]) != "a.go" {
+		t.Errorf("want only a.go (testdata skipped), got %v", files)
+	}
+}
+
 func TestWalk_SkipGenerated(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "a.go"), "package p\n")
