@@ -1,0 +1,12 @@
+line_length: 100
+collapse_short: true
+split_results: auto
+expand_grouped_params: false
+targets:
+  functions: true
+  interfaces: true
+  generics: true
+  func_literals: false
+format_test_files: true
+skip_generated: true
+warn_on_skip: true
