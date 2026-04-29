@@ -68,6 +68,7 @@ func renderSingleLine(s signature, cfg config.Config) (string, error) {
 	return buf.String(), nil
 }
 
+// writeResults appends the results FieldList to buf, with parentheses if needed.
 func writeResults(buf *bytes.Buffer, s signature) error {
 	if s.results == nil || len(s.results.List) == 0 {
 		return nil
@@ -132,7 +133,7 @@ func printFieldListInner(buf *bytes.Buffer, fset *token.FileSet, fl *ast.FieldLi
 		}
 		// type
 		if err := printNode(buf, fset, f.Type); err != nil {
-			return err
+			return fmt.Errorf("render field type: %w", err)
 		}
 	}
 	return nil
@@ -230,7 +231,7 @@ func writeFieldsMultiLine(buf *bytes.Buffer, s signature, fl *ast.FieldList, ind
 	for _, f := range fl.List {
 		var typeBuf bytes.Buffer
 		if err := printNode(&typeBuf, fset(s), f.Type); err != nil {
-			return err
+			return fmt.Errorf("render field type: %w", err)
 		}
 		typeStr := typeBuf.String()
 
