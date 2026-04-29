@@ -25,6 +25,7 @@ type signature struct {
 	bodyStart   token.Pos      // "{" or end of method-in-interface line
 	nameSpan    span
 	name        string         // populated for FuncDecl and InterfaceMethod, "" for FuncLit
+	fullSpan    span           // covers full signature: from "func" through "{" (or end of interface method line)
 	commentMap  ast.CommentMap // populated by signatures() for the file
 	fset        *token.FileSet
 }
@@ -62,6 +63,15 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 			} else {
 				s.bodyStart = x.End()
 			}
+			s.fullSpan = span{
+				start: fset.Position(x.Pos()).Offset,
+				end: func() int {
+					if x.Body != nil {
+						return fset.Position(x.Body.Lbrace).Offset + 1 // include "{"
+					}
+					return fset.Position(x.End()).Offset
+				}(),
+			}
 			out = append(out, s)
 		case *ast.InterfaceType:
 			if !cfg.Targets.Interfaces {
@@ -92,6 +102,10 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 				if ft.TypeParams != nil {
 					s.typeParams = ft.TypeParams
 				}
+				s.fullSpan = span{
+					start: fset.Position(field.Pos()).Offset,
+					end:   fset.Position(field.End()).Offset,
+				}
 				out = append(out, s)
 			}
 		case *ast.FuncLit:
@@ -109,6 +123,10 @@ func signatures(fset *token.FileSet, file *ast.File, cfg config.Config) []signat
 			}
 			if x.Type.TypeParams != nil {
 				s.typeParams = x.Type.TypeParams
+			}
+			s.fullSpan = span{
+				start: fset.Position(x.Pos()).Offset,
+				end:   fset.Position(x.Body.Lbrace).Offset + 1,
 			}
 			out = append(out, s)
 		}
