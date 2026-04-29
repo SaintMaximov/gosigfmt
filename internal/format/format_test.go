@@ -1,11 +1,18 @@
 package format
 
 import (
+	"bytes"
+	"flag"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/SaintMaximov/gosigfmt/internal/config"
+	"gopkg.in/yaml.v3"
 )
+
+var update = flag.Bool("update", false, "update golden files")
 
 func TestFormat_NoChangeNeeded(t *testing.T) {
 	src := []byte(`package p
@@ -106,5 +113,56 @@ func f(
 	}
 	if strings.Contains(string(out), "func f(a int") {
 		t.Errorf("must NOT collapse when line comments present; got:\n%s", string(out))
+	}
+}
+
+func TestGolden(t *testing.T) {
+	cases, err := filepath.Glob("../../testdata/golden/*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, dir := range cases {
+		info, err := os.Stat(dir)
+		if err != nil || !info.IsDir() {
+			continue
+		}
+		name := filepath.Base(dir)
+		t.Run(name, func(t *testing.T) {
+			input, err := os.ReadFile(filepath.Join(dir, "input.go"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			cfg := config.Defaults()
+			if cfgBytes, err := os.ReadFile(filepath.Join(dir, "config.yaml")); err == nil {
+				if err := yaml.Unmarshal(cfgBytes, &cfg); err != nil {
+					t.Fatalf("parse config.yaml: %v", err)
+				}
+			}
+			got, err := Format(input, cfg)
+			if err != nil {
+				t.Fatalf("Format: %v", err)
+			}
+			expectedPath := filepath.Join(dir, "expected.go")
+			if *update {
+				if err := os.WriteFile(expectedPath, got, 0644); err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
+			expected, err := os.ReadFile(expectedPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(got, expected) {
+				t.Errorf("mismatch in %s\nexpected:\n%s\ngot:\n%s", name, string(expected), string(got))
+			}
+			again, err := Format(got, cfg)
+			if err != nil {
+				t.Fatalf("idempotent re-format: %v", err)
+			}
+			if !bytes.Equal(again, got) {
+				t.Errorf("not idempotent in %s", name)
+			}
+		})
 	}
 }
