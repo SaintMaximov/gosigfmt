@@ -33,7 +33,12 @@ func (a action) String() string {
 // decide chooses an action for the given signature.
 // baseIndent is the indentation of the line containing "func".
 // alreadyMultiLine indicates whether the signature in source is already split across lines.
-func decide(s signature, cfg config.Config, baseIndent string, alreadyMultiLine bool) (action, error) {
+func decide(
+	s signature,
+	cfg config.Config,
+	baseIndent string,
+	alreadyMultiLine bool,
+) (action, error) {
 	single, err := renderSingleLine(s, cfg)
 	if err != nil {
 		return actionKeep, err

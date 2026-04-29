@@ -146,7 +146,12 @@ func printFieldListInner(buf *bytes.Buffer, fset *token.FileSet, fl *ast.FieldLi
 //
 // The output for FuncDecl/FuncLit ends with " {".
 // For interface methods there is no trailing.
-func renderMultiLine(s signature, cfg config.Config, baseIndent string, splitResults bool) (string, error) {
+func renderMultiLine(
+	s signature,
+	cfg config.Config,
+	baseIndent string,
+	splitResults bool,
+) (string, error) {
 	paramIndent := baseIndent + "\t"
 	var buf bytes.Buffer
 
@@ -225,7 +230,13 @@ func renderMultiLine(s signature, cfg config.Config, baseIndent string, splitRes
 // `indent` and followed by ",\n". Comments associated with each field are
 // preserved: leading comments (positioned before the field) appear on their
 // own line above; trailing comments appear at end of the field's line.
-func writeFieldsMultiLine(buf *bytes.Buffer, s signature, fl *ast.FieldList, indent string, expandGrouped bool) error {
+func writeFieldsMultiLine(
+	buf *bytes.Buffer,
+	s signature,
+	fl *ast.FieldList,
+	indent string,
+	expandGrouped bool,
+) error {
 	if fl == nil {
 		return nil
 	}
