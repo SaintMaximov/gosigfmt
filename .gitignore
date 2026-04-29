@@ -2,8 +2,8 @@
 /bin/
 /dist/
 /out/
-gosigfmt
-gosigfmt.exe
+/gosigfmt
+/gosigfmt.exe
 
 # Go test outputs
 *.test
