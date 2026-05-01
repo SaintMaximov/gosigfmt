@@ -81,7 +81,7 @@ func isGenerated(path string) bool {
 	if err != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	scanner := bufio.NewScanner(f)
 	for i := 0; i < 5 && scanner.Scan(); i++ {
 		line := scanner.Text()

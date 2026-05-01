@@ -99,7 +99,6 @@ func needParens(fl *ast.FieldList) bool {
 		if len(f.Names) == 0 {
 			totalFields++
 		} else {
-			totalFields += len(f.Names)
 			return true // any names → parens
 		}
 	}

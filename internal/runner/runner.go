@@ -25,7 +25,7 @@ const (
 
 type Options struct {
 	Mode     Mode
-	Parallel int    // 0 = GOMAXPROCS
+	Parallel int // 0 = GOMAXPROCS
 	Cfg      config.Config
 	Stdin    io.Reader
 	Stdout   io.Writer
@@ -131,33 +131,33 @@ func Process(paths []string, opts Options) (int, error) {
 	exit := 0
 	for _, r := range collected {
 		for _, w := range r.warns {
-			fmt.Fprintln(opts.Stderr, w)
+			_, _ = fmt.Fprintln(opts.Stderr, w)
 		}
 		if r.err != nil {
-			fmt.Fprintf(opts.Stderr, "error %s: %v\n", r.path, r.err)
+			_, _ = fmt.Fprintf(opts.Stderr, "error %s: %v\n", r.path, r.err)
 			exit = 1
 			continue
 		}
 		switch opts.Mode {
 		case ModePrint:
-			opts.Stdout.Write(r.output)
+			_, _ = opts.Stdout.Write(r.output)
 		case ModeWrite:
 			if r.needsFmt {
 				if err := atomicWrite(r.path, r.output); err != nil {
-					fmt.Fprintf(opts.Stderr, "write %s: %v\n", r.path, err)
+					_, _ = fmt.Fprintf(opts.Stderr, "write %s: %v\n", r.path, err)
 					exit = 1
 				}
 			}
 		case ModeList:
 			if r.needsFmt {
-				fmt.Fprintln(opts.Stdout, r.path)
+				_, _ = fmt.Fprintln(opts.Stdout, r.path)
 				if exit == 0 {
 					exit = 2
 				}
 			}
 		case ModeDiff:
 			if r.needsFmt {
-				opts.Stdout.Write([]byte(r.diff))
+				_, _ = opts.Stdout.Write([]byte(r.diff))
 			}
 		}
 	}
@@ -189,14 +189,14 @@ func atomicWrite(path string, data []byte) error {
 		return err
 	}
 	tmpPath := tmp.Name()
-	cleanup := func() { os.Remove(tmpPath) }
+	cleanup := func() { _ = os.Remove(tmpPath) }
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		cleanup()
 		return err
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		cleanup()
 		return err
 	}

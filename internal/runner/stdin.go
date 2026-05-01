@@ -24,14 +24,14 @@ func processStdin(opts Options) (int, error) {
 	}
 	switch opts.Mode {
 	case ModePrint:
-		opts.Stdout.Write(out)
+		_, _ = opts.Stdout.Write(out)
 	case ModeList:
 		if string(out) != string(src) {
-			fmt.Fprintln(opts.Stdout, "<stdin>")
+			_, _ = fmt.Fprintln(opts.Stdout, "<stdin>")
 			return 2, nil
 		}
 	case ModeDiff:
-		opts.Stdout.Write([]byte(Diff("<stdin>", src, out)))
+		_, _ = opts.Stdout.Write([]byte(Diff("<stdin>", src, out)))
 	}
 	return 0, nil
 }

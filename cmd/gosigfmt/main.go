@@ -31,7 +31,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	)
 
 	fs.Usage = func() {
-		fmt.Fprintf(stderr, "Usage: gosigfmt [flags] [path...]\n\n")
+		_, _ = fmt.Fprintf(stderr, "Usage: gosigfmt [flags] [path...]\n\n")
 		fs.PrintDefaults()
 	}
 
@@ -40,7 +40,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 
 	if *showVer {
-		fmt.Fprintln(stdout, "gosigfmt version", version)
+		_, _ = fmt.Fprintln(stdout, "gosigfmt version", version)
 		return 0
 	}
 
@@ -56,11 +56,11 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		modeCount++
 	}
 	if modeCount > 1 {
-		fmt.Fprintln(stderr, "error: -w, -l, and -d are mutually exclusive")
+		_, _ = fmt.Fprintln(stderr, "error: -w, -l, and -d are mutually exclusive")
 		return 1
 	}
 	if *cfgPath != "" && *noConfig {
-		fmt.Fprintln(stderr, "error: --config and --no-config are mutually exclusive")
+		_, _ = fmt.Fprintln(stderr, "error: --config and --no-config are mutually exclusive")
 		return 1
 	}
 
@@ -79,12 +79,12 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if *cfgPath != "" && !*noConfig {
 		data, err := os.ReadFile(*cfgPath)
 		if err != nil {
-			fmt.Fprintln(stderr, "error:", err)
+			_, _ = fmt.Fprintln(stderr, "error:", err)
 			return 1
 		}
 		c, err := config.ParseYAML(data)
 		if err != nil {
-			fmt.Fprintln(stderr, "error:", err)
+			_, _ = fmt.Fprintln(stderr, "error:", err)
 			return 1
 		}
 		cfg = c
@@ -103,7 +103,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 
 	exit, err := runner.Process(fs.Args(), opts)
 	if err != nil {
-		fmt.Fprintln(stderr, "error:", err)
+		_, _ = fmt.Fprintln(stderr, "error:", err)
 		if exit == 0 {
 			exit = 1
 		}
