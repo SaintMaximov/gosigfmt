@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -17,96 +16,62 @@ func main() {
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	fs := flag.NewFlagSet("gosigfmt", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-
-	var (
-		write    = fs.Bool("w", false, "write changes back to files in place")
-		list     = fs.Bool("l", false, "list files needing formatting (CI mode)")
-		diff     = fs.Bool("d", false, "show unified diff of pending changes")
-		cfgPath  = fs.String("config", "", "explicit path to .gosigfmt.yaml")
-		noConfig = fs.Bool("no-config", false, "ignore .gosigfmt.yaml and use defaults")
-		parallel = fs.Int("parallel", 0, "worker count (default: GOMAXPROCS)")
-		showVer  = fs.Bool("version", false, "print version and exit")
-	)
-
-	fs.Usage = func() {
-		_, _ = fmt.Fprintf(stderr, "Usage: gosigfmt [flags] [path...]\n\n")
-		fs.PrintDefaults()
+	errf := func(format string, a ...any) {
+		_, _ = fmt.Fprintf(stderr, "error: "+format+"\n", a...)
 	}
 
-	if err := fs.Parse(args[1:]); err != nil {
+	f, paths, err := parseFlags(args, stderr)
+	if err != nil {
 		return 1
 	}
 
-	if *showVer {
+	if f.showVer {
 		_, _ = fmt.Fprintln(stdout, "gosigfmt version", version)
 		return 0
 	}
 
-	// validate flag combinations
-	modeCount := 0
-	if *write {
-		modeCount++
-	}
-	if *list {
-		modeCount++
-	}
-	if *diff {
-		modeCount++
-	}
-	if modeCount > 1 {
-		_, _ = fmt.Fprintln(stderr, "error: -w, -l, and -d are mutually exclusive")
+	mode, err := f.resolveMode()
+	if err != nil {
+		errf("%s", err)
 		return 1
 	}
-	if *cfgPath != "" && *noConfig {
-		_, _ = fmt.Fprintln(stderr, "error: --config and --no-config are mutually exclusive")
+	if f.cfgPath != "" && f.noConfig {
+		errf("--config and --no-config are mutually exclusive")
 		return 1
 	}
 
-	mode := runner.ModePrint
-	switch {
-	case *write:
-		mode = runner.ModeWrite
-	case *list:
-		mode = runner.ModeList
-	case *diff:
-		mode = runner.ModeDiff
+	cfg, err := loadConfig(f.cfgPath, f.noConfig)
+	if err != nil {
+		errf("%s", err)
+		return 1
 	}
 
-	// Pre-resolve cfg for stdin path (where there's no file dir to walk up from).
-	cfg := config.Defaults()
-	if *cfgPath != "" && !*noConfig {
-		data, err := os.ReadFile(*cfgPath)
-		if err != nil {
-			_, _ = fmt.Fprintln(stderr, "error:", err)
-			return 1
-		}
-		c, err := config.ParseYAML(data)
-		if err != nil {
-			_, _ = fmt.Fprintln(stderr, "error:", err)
-			return 1
-		}
-		cfg = c
-	}
-
-	opts := runner.Options{
+	exit, err := runner.Process(paths, runner.Options{
 		Mode:     mode,
-		Parallel: *parallel,
+		Parallel: f.parallel,
 		Cfg:      cfg,
 		Stdin:    stdin,
 		Stdout:   stdout,
 		Stderr:   stderr,
-		NoConfig: *noConfig,
-		Config:   *cfgPath,
-	}
-
-	exit, err := runner.Process(fs.Args(), opts)
+		NoConfig: f.noConfig,
+		Config:   f.cfgPath,
+	})
 	if err != nil {
-		_, _ = fmt.Fprintln(stderr, "error:", err)
+		errf("%s", err)
 		if exit == 0 {
 			exit = 1
 		}
 	}
 	return exit
+}
+
+func loadConfig(cfgPath string, noConfig bool) (config.Config, error) {
+	if cfgPath == "" || noConfig {
+		return config.Defaults(), nil
+	}
+	data, err := os.ReadFile(cfgPath)
+	if err != nil {
+		return config.Config{}, err
+	}
+	return config.ParseYAML(data)
 }
