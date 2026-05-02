@@ -1,0 +1,7 @@
+module github.com/SaintMaximov/gosigfmt
+
+go 1.26
+
+require gopkg.in/yaml.v3 v3.0.1
+
+require github.com/sergi/go-diff v1.4.0
