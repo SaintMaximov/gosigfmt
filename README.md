@@ -36,7 +36,7 @@ Linux, macOS, and Windows on amd64/arm64.
 
 ```bash
 docker run --rm -v "$PWD:/work" -w /work \
-  ghcr.io/saintmaximov/gosigfmt:latest -l ./...
+  saintmaximov/gosigfmt:latest -l ./...
 ```
 
 ## Quick start
