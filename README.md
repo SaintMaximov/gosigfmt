@@ -54,7 +54,7 @@ cat file.go | gosigfmt   # stdin
 Before:
 
 ```go
-func update(ctx context.Context, id int64, name string, age int, address string, country string) error {
+func (s *Server) CreateOrder(ctx context.Context, req *orderpb.CreateOrderRequest, opts ...grpc.CallOption) (*orderpb.CreateOrderResponse, error) {
     // ...
 }
 ```
@@ -62,14 +62,11 @@ func update(ctx context.Context, id int64, name string, age int, address string,
 After (`line_length: 100`):
 
 ```go
-func update(
+func (s *Server) CreateOrder(
     ctx context.Context,
-    id int64,
-    name string,
-    age int,
-    address string,
-    country string,
-) error {
+    req *orderpb.CreateOrderRequest,
+    opts ...grpc.CallOption,
+) (*orderpb.CreateOrderResponse, error) {
     // ...
 }
 ```
