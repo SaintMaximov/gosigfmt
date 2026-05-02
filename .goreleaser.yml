@@ -37,6 +37,7 @@ checksum:
 dockers:
   - image_templates:
       - "ghcr.io/saintmaximov/gosigfmt:{{ .Version }}-amd64"
+      - "saintmaximov/gosigfmt:{{ .Version }}-amd64"
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
@@ -48,6 +49,7 @@ dockers:
       - internal
   - image_templates:
       - "ghcr.io/saintmaximov/gosigfmt:{{ .Version }}-arm64"
+      - "saintmaximov/gosigfmt:{{ .Version }}-arm64"
     use: buildx
     goarch: arm64
     build_flag_templates:
@@ -68,6 +70,14 @@ docker_manifests:
     image_templates:
       - "ghcr.io/saintmaximov/gosigfmt:{{ .Version }}-amd64"
       - "ghcr.io/saintmaximov/gosigfmt:{{ .Version }}-arm64"
+  - name_template: "saintmaximov/gosigfmt:{{ .Version }}"
+    image_templates:
+      - "saintmaximov/gosigfmt:{{ .Version }}-amd64"
+      - "saintmaximov/gosigfmt:{{ .Version }}-arm64"
+  - name_template: "saintmaximov/gosigfmt:latest"
+    image_templates:
+      - "saintmaximov/gosigfmt:{{ .Version }}-amd64"
+      - "saintmaximov/gosigfmt:{{ .Version }}-arm64"
 
 release:
   github:
