@@ -1,5 +1,11 @@
 # gosigfmt
 
+[![CI](https://github.com/SaintMaximov/gosigfmt/actions/workflows/ci.yml/badge.svg)](https://github.com/SaintMaximov/gosigfmt/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/SaintMaximov/gosigfmt.svg)](https://pkg.go.dev/github.com/SaintMaximov/gosigfmt)
+[![Go Report Card](https://goreportcard.com/badge/github.com/SaintMaximov/gosigfmt)](https://goreportcard.com/report/github.com/SaintMaximov/gosigfmt)
+[![Release](https://img.shields.io/github/v/release/SaintMaximov/gosigfmt)](https://github.com/SaintMaximov/gosigfmt/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Format Go function and method signatures: signatures longer than a configurable
 line length are split with each parameter on its own line; multi-line signatures
 that fit on one line are collapsed back. Configuration via `.gosigfmt.yaml`,
